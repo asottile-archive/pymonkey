@@ -80,3 +80,58 @@ def test_help_edge_case():
     assert args == pymonkey.Arguments(
         all=False, patches=(), cmd=('pip', '--help'),
     )
+
+
+class FakeEntryPoint(object):
+    def __init__(self, module_name, load_result):
+        self.module_name = module_name
+        self._load_result = load_result
+
+    def load(self):
+        return self._load_result
+
+
+def test_get_patch_callables_missing_patches(capsys):
+    with pytest.raises(pymonkey.PymonkeySystemExit):
+        pymonkey.get_patch_callables(False, ('patch1',), [])
+
+    out, err = capsys.readouterr()
+    assert err == 'Could not find patch(es): {}\n'.format({'patch1'})
+
+
+def test_retrieve_module_specified():
+    class fakemodule1(object):
+        @staticmethod
+        def pymonkey_patch(mod):
+            raise NotImplementedError
+
+    ret = pymonkey.get_patch_callables(
+        False, ('fakemodule1',),
+        [FakeEntryPoint('fakemodule1', fakemodule1())],
+    )
+    assert ret == [fakemodule1.pymonkey_patch]
+
+
+def test_retreive_function_specified():
+    def patch(mod):
+        raise NotImplementedError
+
+    ret = pymonkey.get_patch_callables(
+        False, ('fakemodule1',), [FakeEntryPoint('fakemodule1', patch)],
+    )
+    assert ret == [patch]
+
+
+def test_retrieve_all():
+    def patch1(mod):
+        raise NotImplementedError
+
+    def patch2(mod):
+        raise NotImplementedError
+
+    ret = pymonkey.get_patch_callables(
+        True, (),
+        [FakeEntryPoint('mod1', patch1), FakeEntryPoint('mod2', patch2)]
+    )
+
+    assert ret == [patch1, patch2]

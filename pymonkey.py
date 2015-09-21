@@ -77,24 +77,71 @@ def manual_argument_parsing(argv):
     return Arguments(all=all_patches, patches=tuple(patches), cmd=tuple(cmd))
 
 
+class PymonkeyImportHook(object):
+    """This is where the magic happens.
+
+    This import hook is responsible for the following things:
+        - It will load all modules
+        - In loading, it'll first invoke builtin import.
+        - It'll then pass the module that it imported through each of the
+            pymonkey hooks.
+    """
+
+    def __init__(self, hook_fns):
+        self.hook_fns = hook_fns
+        self._handling = []
+
+    def find_module(self, fullname, path=None):
+        print('find_module called with {}'.format(fullname))
+        return self
+
+    def load_module(self, fullname):
+        print('load_module called with {}'.format(fullname))
+
+
+def get_patch_callables(all_patches, patches, pymonkey_entry_points):
+    def _to_callable(entry_point):
+        """If they give us a module, assume the existence of a function called
+        pymonkey_patch.
+        """
+        loaded = entry_point.load()
+        if callable(loaded):
+            return loaded
+        else:
+            return loaded.pymonkey_patch
+
+    all_entries = {entry.module_name: entry for entry in pymonkey_entry_points}
+    if not all_patches and set(patches) - set(all_entries):
+        print(
+            'Could not find patch(es): {}'.format(
+                set(patches) - set(all_entries),
+            ),
+            file=sys.stderr,
+        )
+        raise PymonkeySystemExit(1)
+    if all_patches:
+        entry_points = all_entries.values()
+    else:
+        entry_points = [all_entries[modname] for modname in patches]
+    return [_to_callable(entry) for entry in entry_points]
+
+
 def main(argv=None):
     argv = argv if argv is not None else sys.argv[1:]
     args = manual_argument_parsing(argv)
 
     # TODO: Register patches
-    if args.all:
-        # TODO: hook up all the things
-        pass
-    else:
-        # TODO: hook up specific things
-        pass
+    get_patch_callables(
+        args.all, args.patches,
+        list(pkg_resources.iter_entry_points('pymonkey')),
+    )
 
     # Call the thing
     entry, = list(pkg_resources.iter_entry_points(
         'console_scripts', args.cmd[0],
     ))
     sys.argv = list(args.cmd)
-    sys.exit(entry.load()())
+    return entry.load()()
 
 if __name__ == '__main__':
     sys.exit(main())
