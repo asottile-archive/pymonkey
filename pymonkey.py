@@ -101,7 +101,7 @@ class PymonkeyImportHook(object):
         self._handling = []
 
     def _module_exists(self, module, path):
-        # First check other entires in metapath for the module
+        # First check other entries in metapath for the module
         # Otherwise, try basic python import logic
         for entry in sys.meta_path:
             if entry is not self and entry.find_module(module, path):
