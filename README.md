@@ -1,7 +1,7 @@
-[![Build Status](https://travis-ci.org/asottile/virtualenv-hax.svg?branch=master)](https://travis-ci.org/asottile/virtualenv-hax)
-[![Coverage Status](https://img.shields.io/coveralls/asottile/virtualenv-hax.svg?branch=master)](https://coveralls.io/r/asottile/virtualenv-hax)
+[![Build Status](https://travis-ci.org/asottile/pymonkey.svg?branch=master)](https://travis-ci.org/asottile/pymonkey)
+[![Coverage Status](https://img.shields.io/coveralls/asottile/pymonkey.svg?branch=master)](https://coveralls.io/r/asottile/pymonkey)
 
-virtualenv-hax
-==============
+pymonkey
+========
 
-A wrapper around virtualenv that avoids https://github.com/PythonCharmers/python-future/issues/148
+Register import hook monkeypatches and run python programs

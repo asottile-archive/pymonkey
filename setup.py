@@ -17,10 +17,5 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     py_modules=['pymonkey'],
-    install_requires=['argparse', 'virtualenv'],
-    entry_points={
-        'console_scripts': [
-            'pymonkey = pymonkey:main',
-        ],
-    },
+    entry_points={'console_scripts': ['pymonkey = pymonkey:main']},
 )

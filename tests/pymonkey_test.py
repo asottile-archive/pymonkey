@@ -83,7 +83,8 @@ def test_help_edge_case():
 
 
 class FakeEntryPoint(object):
-    def __init__(self, module_name, load_result):
+    def __init__(self, name, module_name, load_result):
+        self.name = name
         self.module_name = module_name
         self._load_result = load_result
 
@@ -107,7 +108,7 @@ def test_retrieve_module_specified():
 
     ret = pymonkey.get_patch_callables(
         False, ('fakemodule1',),
-        [FakeEntryPoint('fakemodule1', fakemodule1())],
+        [FakeEntryPoint('fakemodule1', 'fakemodule1', fakemodule1())],
     )
     assert ret == [fakemodule1.pymonkey_patch]
 
@@ -117,7 +118,9 @@ def test_retreive_function_specified():
         raise NotImplementedError
 
     ret = pymonkey.get_patch_callables(
-        False, ('fakemodule1',), [FakeEntryPoint('fakemodule1', patch)],
+        False,
+        ('fakemodule1',),
+        [FakeEntryPoint('fakemodule1', 'fakemodule1', patch)],
     )
     assert ret == [patch]
 
@@ -131,7 +134,20 @@ def test_retrieve_all():
 
     ret = pymonkey.get_patch_callables(
         True, (),
-        [FakeEntryPoint('mod1', patch1), FakeEntryPoint('mod2', patch2)]
+        [
+            FakeEntryPoint('mod1', 'mod1', patch1),
+            FakeEntryPoint('mod2', 'mod2', patch2),
+        ]
     )
 
     assert ret == [patch1, patch2]
+
+
+def test_retrieve_name_doesnt_match_module_name():
+    def patch1(mod):
+        raise NotImplementedError
+
+    ret = pymonkey.get_patch_callables(
+        False, ('mod-1',), [FakeEntryPoint('mod-1', 'mod_1', patch1)],
+    )
+    assert ret == [patch1]
