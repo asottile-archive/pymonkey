@@ -30,7 +30,7 @@ def pymonkey_patch(mod):
         return
 
     # Apply your patches here to module_to_patch
-    module_to_patch.foo = 'bar'
+    mod.foo = 'bar'
 ```
 
 And add the entrypoint to setup.py:
