@@ -1,4 +1,5 @@
--e .
+./testing/pkg1
+./testing/pkg2
 coverage
 flake8
 mock

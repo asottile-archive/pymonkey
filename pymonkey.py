@@ -122,7 +122,7 @@ class PymonkeyImportHook(object):
 
         try:
             imp.find_module(to_try_mod, path)
-            return True
+            return True  # pragma: no cover (PY3 import is via sys.meta_path)
         except ImportError:
             return False
 
@@ -150,7 +150,7 @@ class PymonkeyImportHook(object):
 
     def load_module(self, fullname):
         # Since we're going to invoke the import machinery and hit ourselves
-        # again, store some state so we don't reparse ourselves
+        # again, store some state so we don't recurse forever
         with self.handling(fullname):
             module = __import__(fullname, fromlist=[str('__trash')], level=0)
             for hook_fn in self.hook_fns:
@@ -192,7 +192,8 @@ def main(argv=None):
         args.all, args.patches,
         tuple(pkg_resources.iter_entry_points('pymonkey'))
     )
-    sys.meta_path.append(PymonkeyImportHook(callables))
+    # Important to insert at the beginning to be ahead of the stdlib importer
+    sys.meta_path.insert(0, PymonkeyImportHook(callables))
 
     # Call the thing
     entry, = tuple(

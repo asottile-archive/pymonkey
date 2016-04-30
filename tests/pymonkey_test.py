@@ -1,7 +1,14 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import os
+import subprocess
+import sys
+
+import coverage
+import mock
 import pytest
+import six
 
 import pymonkey
 
@@ -22,6 +29,19 @@ def test_help_message(capsys, args):
     out, err = capsys.readouterr()
     assert out == ''
     assert err == pymonkey.HELPMSG + '\n'
+
+
+def test_DEBUG_not_debugging(capsys):
+    pymonkey.DEBUG('test')
+    out, err = capsys.readouterr()
+    assert (out, err) == ('', '')
+
+
+def test_DEBUG_debugging(capsys):
+    with mock.patch.dict(os.environ, {'PYMONKEY_DEBUG': '1'}):
+        pymonkey.DEBUG('test')
+    out, err = capsys.readouterr()
+    assert (out, err) == ('', 'pymonkey: test\n')
 
 
 def test_without_dashdash(capsys):
@@ -151,3 +171,43 @@ def test_retrieve_name_doesnt_match_module_name():
         False, ('mod-1',), [FakeEntryPoint('mod-1', 'mod_1', patch1)],
     )
     assert ret == [patch1]
+
+
+@pytest.mark.parametrize(
+    ('mod', 'path', 'expected'),
+    (
+        ('six', None, True),
+        ('six.moves', six.__path__, True),
+        ('coverage.data', coverage.__path__, True),
+        ('i_dont_exist', None, False),
+    ),
+)
+def test_module_exists(mod, path, expected):
+    hook = pymonkey.PymonkeyImportHook(())
+    assert hook._module_exists(mod, path) is expected
+
+
+def output_with_coverage(*args):
+    return subprocess.check_output(
+        (sys.executable, '-m', 'coverage', 'run') + args
+    ).decode('UTF-8')
+
+
+def run_pymonkey(*args):
+    return output_with_coverage('-m', 'pymonkey', *args)
+
+
+def test_integration_without_pymonkey():
+    assert output_with_coverage('-m', 'targetmod') == '1\n'
+
+
+def test_integration_pymonkey_no_patches():
+    assert run_pymonkey('--', 'targetmod') == '1\n'
+
+
+def test_integration_with_patch():
+    assert run_pymonkey('patchingmod', '--', 'targetmod') == '2\n'
+
+
+def test_integration_all_patch():
+    assert run_pymonkey('--all', '--', 'targetmod') == '2\n'
