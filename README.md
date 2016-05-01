@@ -6,6 +6,11 @@ pymonkey
 
 Register import hook monkeypatches and run python programs
 
+### Installation
+
+```
+pip install pymonkey
+```
 
 ### Registering a patch
 
@@ -45,7 +50,6 @@ setup(
 )
 ```
 
-
 ### Commandline usage
 
 Applying a single patch:
@@ -66,10 +70,45 @@ Viewing the help
 $ pymonkey --help
 ```
 
-### Installation
+### Making entry points with pymonkey
+
+In a module:
+
+```python
+## mymod_main.py
+from pymonkey import make_entry_point
+
+# The first argument is a list of pymonkey patches to apply
+# The second argument is the entry point to run
+main = make_entry_point(('mymod',), 'pip')
+
+if __name__ == '__main__':
+    exit(main())
+```
+
+In setup.py
 
 ```
-pip install pymonkey
+setup(
+    ...,
+    entry_points={
+        'console_scripts': ['pip-patched = mymod_main:main'],
+        'pymonkey': ['mymod = mymod.pymonkey:pymonkey_patch'],
+    },
+    ...
+)
+```
+
+Then instead of
+
+```
+$ pymonkey mymod -- pip ...
+```
+
+You can now do
+
+```
+$ pip-patched ...
 ```
 
 ### Things using pymonkey
