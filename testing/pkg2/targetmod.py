@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 import six.moves  # Assertion: can import modules with import path hackery
 
@@ -12,6 +14,9 @@ def main():
     # Make sure we still get import errors for failing modules
     with pytest.raises(ImportError):
         __import__('i_dont_exist')
+
+    if len(sys.argv) > 1:
+        print(', '.join(sys.argv[1:]))
 
 
 if __name__ == '__main__':

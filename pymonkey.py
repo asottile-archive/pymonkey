@@ -228,5 +228,20 @@ def main(argv=None):
     sys.argv = list(args.cmd)
     return entry.load()()
 
+
+def make_entry_point(patches, original_entry_point):
+    """Use this to make a console_script entry point for your application
+    which applies patches.
+    :param patches: iterable of pymonkey patches to apply.  Ex: ('my-patch,)
+    :param original_entry_point: Such as 'pip'
+    """
+    def entry(argv=None):
+        argv = argv if argv is not None else sys.argv[1:]
+        return main(
+            tuple(patches) + ('--', original_entry_point) + tuple(argv)
+        )
+
+    return entry
+
 if __name__ == '__main__':
     sys.exit(main())

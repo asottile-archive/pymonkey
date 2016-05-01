@@ -222,6 +222,7 @@ def run_pymonkey(*args):
 
 def test_integration_without_pymonkey():
     assert output_with_coverage('-m', 'targetmod') == '1\n'
+    assert output_with_coverage('-m', 'targetmod', 'test') == '1\ntest\n'
 
 
 def test_integration_pymonkey_no_patches():
@@ -234,3 +235,12 @@ def test_integration_with_patch():
 
 def test_integration_all_patch():
     assert run_pymonkey('--all', '--', 'targetmod') == '2\n'
+
+
+def test_make_entry_point_simple():
+    assert output_with_coverage('-m', 'patchingmod_main') == '2\n'
+
+
+def test_make_entry_point_extra_args():
+    out = output_with_coverage('-m', 'patchingmod_main', 'test', 'test2')
+    assert out == '2\ntest, test2\n'
