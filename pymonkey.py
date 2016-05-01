@@ -17,6 +17,10 @@ class PymonkeySystemExit(SystemExit):
     pass
 
 
+class PymonkeyError(RuntimeError):
+    pass
+
+
 HELPMSG = '''\
 usage: {} [-h] [--debug] [--all] [patches [patches ...]] -- cmd [cmd ...]
 
@@ -158,14 +162,36 @@ class PymonkeyImportHook(object):
             return module
 
 
+@contextlib.contextmanager
+def assert_no_other_modules_imported(imported_modname):
+    def getmods():
+        return {modname for modname, mod in sys.modules.items() if mod}
+
+    before = getmods()
+    yield
+    after = getmods()
+
+    unexpected_imports = sorted(
+        modname for modname in after - before
+        if not imported_modname.startswith(modname)
+    )
+    if unexpected_imports:
+        raise PymonkeyError(
+            'pymonkey modules must not trigger imports at the module scope.  '
+            'The following modules were imported while importing {}:\n'
+            '{}'.format(
+                imported_modname, '\t' + '\t\n'.join(unexpected_imports),
+            ),
+        )
+
+
 def get_patch_callables(all_patches, patches, pymonkey_entry_points):
     def _to_callable(entry_point):
         """If they give us a module, assume the existence of a function called
         pymonkey_patch.
         """
-        # TODO: watch sys.modules and assert they don't import anything at
-        # the module scope (which would compromise the usefulness)
-        loaded = entry_point.load()
+        with assert_no_other_modules_imported(entry_point.module_name):
+            loaded = entry_point.load()
         if callable(loaded):
             return loaded
         else:

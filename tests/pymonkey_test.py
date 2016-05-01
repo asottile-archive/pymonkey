@@ -112,6 +112,29 @@ class FakeEntryPoint(object):
         return self._load_result
 
 
+def test_assert_no_other_modules_imported_ok():
+    modname = 'testing.importing_test.no_imports'
+    assert modname not in sys.modules
+    with pymonkey.assert_no_other_modules_imported(modname):
+        __import__(modname, fromlist=['__trash'])
+    assert modname in sys.modules
+
+
+def test_assert_no_other_modules_imported_error():
+    modname = 'testing.importing_test.imports_others'
+    assert modname not in sys.modules
+    with pytest.raises(pymonkey.PymonkeyError) as excinfo:
+        with pymonkey.assert_no_other_modules_imported(modname):
+            __import__(modname, fromlist=['__trash'])
+    assert modname in sys.modules
+    assert excinfo.value.args == (
+        'pymonkey modules must not trigger imports at the module scope.  '
+        'The following modules were imported while importing '
+        'testing.importing_test.imports_others:\n'
+        '\ttesting.importing_test.import_target',
+    )
+
+
 def test_get_patch_callables_missing_patches(capsys):
     with pytest.raises(pymonkey.PymonkeySystemExit):
         pymonkey.get_patch_callables(False, ('patch1',), [])
