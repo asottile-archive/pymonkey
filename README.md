@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
 In setup.py
 
-```
+```python
 setup(
     ...,
     entry_points={
