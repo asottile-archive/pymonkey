@@ -4,7 +4,7 @@
 pymonkey
 ========
 
-Register import hook monkeypatches and run python programs
+A tool for applying monkeypatches to python executables.
 
 ### Installation
 
