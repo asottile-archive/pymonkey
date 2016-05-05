@@ -100,8 +100,9 @@ class PymonkeyImportHook(object):
             pymonkey hooks.
     """
 
-    def __init__(self, hook_fns):
-        self.hook_fns = hook_fns
+    def __init__(self, hooks):
+        self._hooks = hooks
+        self._entry_data = dict.fromkeys(hooks)
         self._handling = []
 
     def _module_exists(self, module, path):
@@ -157,9 +158,12 @@ class PymonkeyImportHook(object):
         # again, store some state so we don't recurse forever
         with self.handling(fullname):
             module = __import__(fullname, fromlist=[str('__name__')], level=0)
-            for hook_fn in self.hook_fns:
-                hook_fn(module)
+            for entry, hook_fn in self._hooks.items():
+                hook_fn(module, self._entry_data[entry])
             return module
+
+    def set_entry_data(self, entry, data):
+        self._entry_data[entry] = data
 
 
 @contextlib.contextmanager
@@ -185,17 +189,15 @@ def assert_no_other_modules_imported(imported_modname):
         )
 
 
-def get_patch_callables(all_patches, patches, pymonkey_entry_points):
+def get_entry_callables(all_patches, patches, pymonkey_entry_points, attr):
     def _to_callable(entry_point):
-        """If they give us a module, assume the existence of a function called
-        pymonkey_patch.
-        """
+        """If they give us a module, retrieve `attr`"""
         with assert_no_other_modules_imported(entry_point.module_name):
             loaded = entry_point.load()
         if callable(loaded):
             return loaded
         else:
-            return loaded.pymonkey_patch
+            return getattr(loaded, attr)
 
     if all_patches:
         entry_points = pymonkey_entry_points
@@ -206,7 +208,7 @@ def get_patch_callables(all_patches, patches, pymonkey_entry_points):
             print_std_err('Could not find patch(es): {}'.format(missing))
             raise PymonkeySystemExit(1)
         entry_points = [all_entries[name] for name in patches]
-    return [_to_callable(entry) for entry in entry_points]
+    return {entry.name: _to_callable(entry) for entry in entry_points}
 
 
 def main(argv=None):
@@ -214,18 +216,29 @@ def main(argv=None):
     args = manual_argument_parsing(argv)
 
     # Register patches
-    callables = get_patch_callables(
+    callables = get_entry_callables(
         args.all, args.patches,
-        tuple(pkg_resources.iter_entry_points('pymonkey'))
+        tuple(pkg_resources.iter_entry_points('pymonkey')),
+        attr='pymonkey_patch',
     )
+    hook = PymonkeyImportHook(callables)
     # Important to insert at the beginning to be ahead of the stdlib importer
-    sys.meta_path.insert(0, PymonkeyImportHook(callables))
+    sys.meta_path.insert(0, hook)
+
+    # Allow hooks to do argument parsing
+    argv_callables = get_entry_callables(
+        args.all, args.patches,
+        tuple(pkg_resources.iter_entry_points('pymonkey.argparse')),
+        attr='pymonkey_argparse',
+    )
+    cmd, rest = args.cmd[0], tuple(args.cmd[1:])
+    for entry_name, argv_callable in argv_callables.items():
+        args, rest = tuple(argv_callable(rest))
+        hook.set_entry_data(entry_name, args)
 
     # Call the thing
-    entry, = tuple(
-        pkg_resources.iter_entry_points('console_scripts', args.cmd[0])
-    )
-    sys.argv = list(args.cmd)
+    entry, = tuple(pkg_resources.iter_entry_points('console_scripts', cmd))
+    sys.argv = [cmd] + list(rest)
     return entry.load()()
 
 

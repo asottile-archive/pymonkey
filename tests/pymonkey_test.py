@@ -135,9 +135,9 @@ def test_assert_no_other_modules_imported_error():
     )
 
 
-def test_get_patch_callables_missing_patches(capsys):
+def test_get_entry_callables_missing_patches(capsys):
     with pytest.raises(pymonkey.PymonkeySystemExit):
-        pymonkey.get_patch_callables(False, ('patch1',), [])
+        pymonkey.get_entry_callables(False, ('patch1',), [], 'pymonkey_patch')
 
     out, err = capsys.readouterr()
     assert err == 'Could not find patch(es): {}\n'.format({'patch1'})
@@ -149,23 +149,25 @@ def test_retrieve_module_specified():
         def pymonkey_patch(mod):
             raise NotImplementedError
 
-    ret = pymonkey.get_patch_callables(
+    ret = pymonkey.get_entry_callables(
         False, ('fakemodule1',),
         [FakeEntryPoint('fakemodule1', 'fakemodule1', fakemodule1())],
+        'pymonkey_patch',
     )
-    assert ret == [fakemodule1.pymonkey_patch]
+    assert ret == {'fakemodule1': fakemodule1.pymonkey_patch}
 
 
 def test_retreive_function_specified():
     def patch(mod):
         raise NotImplementedError
 
-    ret = pymonkey.get_patch_callables(
+    ret = pymonkey.get_entry_callables(
         False,
         ('fakemodule1',),
         [FakeEntryPoint('fakemodule1', 'fakemodule1', patch)],
+        'pymonkey_patch',
     )
-    assert ret == [patch]
+    assert ret == {'fakemodule1': patch}
 
 
 def test_retrieve_all():
@@ -175,25 +177,27 @@ def test_retrieve_all():
     def patch2(mod):
         raise NotImplementedError
 
-    ret = pymonkey.get_patch_callables(
+    ret = pymonkey.get_entry_callables(
         True, (),
         [
             FakeEntryPoint('mod1', 'mod1', patch1),
             FakeEntryPoint('mod2', 'mod2', patch2),
-        ]
+        ],
+        'pymonkey_patch',
     )
 
-    assert ret == [patch1, patch2]
+    assert ret == {'mod1': patch1, 'mod2': patch2}
 
 
 def test_retrieve_name_doesnt_match_module_name():
     def patch1(mod):
         raise NotImplementedError
 
-    ret = pymonkey.get_patch_callables(
+    ret = pymonkey.get_entry_callables(
         False, ('mod-1',), [FakeEntryPoint('mod-1', 'mod_1', patch1)],
+        'pymonkey_patch',
     )
-    assert ret == [patch1]
+    assert ret == {'mod-1': patch1}
 
 
 @pytest.mark.parametrize(
@@ -235,6 +239,11 @@ def test_integration_with_patch():
 
 def test_integration_all_patch():
     assert run_pymonkey('--all', '--', 'targetmod') == '2\n'
+
+
+def test_integration_argv():
+    ret = run_pymonkey('patchingmod', '--', 'targetmod', '--patch', '3')
+    assert ret == '3\n'
 
 
 def test_make_entry_point_simple():

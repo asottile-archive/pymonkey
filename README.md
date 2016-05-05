@@ -23,28 +23,43 @@ Make a module:
 # This ensures that import-hook patching will work better later
 
 
+# This is your chance to do argument parsing before running the target
+# executable.
+# This will be called after all of the patch hooks have been registered.
+def pymonkey_argparse(argv):
+    # You'll be passed the arguments as a tuple.  Parse your specific arguments
+    # and return your parsed state and the remaining arguments.
+    # If you wish to forgo argparsing, simply `return None, argv`
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--foo')
+    return parser.parse_known_args(argv)
+
+
 # This is your entry point.  It will be passed module objects after they have
 # been imported.  Check the module name and then apply your patch (if
 # applicable).
 # This will be called as a post-import hook so you'll have a chance to modify
 # the module before another module would import from it.
-def pymonkey_patch(mod):
+# The parsed state computed above will be passed as `args`
+def pymonkey_patch(mod, args):
     # This callback will be called with *every* module that gets imported
     # Guard against the specific module you'd like to patch
     if mod.__name__ != 'module_to_patch':
         return
 
     # Apply your patches here to module_to_patch
-    mod.foo = 'bar'
+    mod.foo = args.foo
 ```
 
-And add the entrypoint to setup.py:
+And add the entrypoints to setup.py:
 
 ```python
 setup(
     ...,
     entry_points={
         'pymonkey': ['mymod = mymod.pymonkey:pymonkey_patch'],
+        'pymonkey.argparse': ['mymod = mymod.pymonkey:pymonkey_argparse'],
     },
     ...
 )
@@ -94,6 +109,7 @@ setup(
     entry_points={
         'console_scripts': ['pip-patched = mymod_main:main'],
         'pymonkey': ['mymod = mymod.pymonkey:pymonkey_patch'],
+        'pymonkey.argparse': ['mymod = mymod.pymonkey:pymonkey_argparse'],
     },
     ...
 )
