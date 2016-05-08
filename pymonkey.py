@@ -156,7 +156,7 @@ class PymonkeyImportHook(object):
         # Since we're going to invoke the import machinery and hit ourselves
         # again, store some state so we don't recurse forever
         with self.handling(fullname):
-            module = __import__(fullname, fromlist=[str('__trash')], level=0)
+            module = __import__(fullname, fromlist=[str('__name__')], level=0)
             for hook_fn in self.hook_fns:
                 hook_fn(module)
             return module
