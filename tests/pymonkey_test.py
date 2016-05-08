@@ -116,7 +116,7 @@ def test_assert_no_other_modules_imported_ok():
     modname = 'testing.importing_test.no_imports'
     assert modname not in sys.modules
     with pymonkey.assert_no_other_modules_imported(modname):
-        __import__(modname, fromlist=['__trash'])
+        __import__(modname, fromlist=[str('__name__')])
     assert modname in sys.modules
 
 
@@ -125,7 +125,7 @@ def test_assert_no_other_modules_imported_error():
     assert modname not in sys.modules
     with pytest.raises(pymonkey.PymonkeyError) as excinfo:
         with pymonkey.assert_no_other_modules_imported(modname):
-            __import__(modname, fromlist=['__trash'])
+            __import__(modname, fromlist=[str('__name__')])
     assert modname in sys.modules
     assert excinfo.value.args == (
         'pymonkey modules must not trigger imports at the module scope.  '
