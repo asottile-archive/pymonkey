@@ -7,5 +7,6 @@ setup(
     entry_points={
         'console_scripts': ['patched-targetmod = patchingmod_main:main'],
         'pymonkey': ['patchingmod = patchingmod'],
+        'pymonkey.argparse': ['patchingmod = patchingmod'],
     },
 )
