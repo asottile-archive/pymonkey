@@ -4,7 +4,7 @@ setup(
     name='pymonkey',
     description='A tool for applying monkeypatches to python executables.',
     url='https://github.com/asottile/pymonkey',
-    version='0.2.0',
+    version='0.2.1',
     author='Anthony Sottile',
     author_email='asottile@umich.edu',
     classifiers=[
