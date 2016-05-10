@@ -7,8 +7,10 @@ import sys
 
 import coverage
 import mock
+import patchingmod
 import pytest
 import six
+from pkg_resources import EntryPoint
 
 import pymonkey
 
@@ -102,16 +104,6 @@ def test_help_edge_case():
     )
 
 
-class FakeEntryPoint(object):
-    def __init__(self, name, module_name, load_result):
-        self.name = name
-        self.module_name = module_name
-        self._load_result = load_result
-
-    def load(self):
-        return self._load_result
-
-
 def test_assert_no_other_modules_imported_ok():
     modname = 'testing.importing_test.no_imports'
     assert modname not in sys.modules
@@ -143,61 +135,39 @@ def test_get_entry_callables_missing_patches(capsys):
     assert err == 'Could not find patch(es): {}\n'.format({'patch1'})
 
 
-def test_retrieve_module_specified():
-    class fakemodule1(object):
-        @staticmethod
-        def pymonkey_patch(mod):
-            raise NotImplementedError
-
+@pytest.mark.parametrize(
+    'entry_s',
+    ('patchingmod = patchingmod', 'patchingmod = patchingmod:pymonkey_patch'),
+)
+def test_get_entry_callables(entry_s):
     ret = pymonkey.get_entry_callables(
-        False, ('fakemodule1',),
-        [FakeEntryPoint('fakemodule1', 'fakemodule1', fakemodule1())],
+        False, ('patchingmod',), [EntryPoint.parse(entry_s)], 'pymonkey_patch',
+    )
+    assert ret == {'patchingmod': patchingmod.pymonkey_patch}
+
+
+def test_retrieve_name_doesnt_match_module_name():
+    ret = pymonkey.get_entry_callables(
+        False, ('mod-1',), [EntryPoint.parse('mod-1 = patchingmod')],
         'pymonkey_patch',
     )
-    assert ret == {'fakemodule1': fakemodule1.pymonkey_patch}
-
-
-def test_retreive_function_specified():
-    def patch(mod):
-        raise NotImplementedError
-
-    ret = pymonkey.get_entry_callables(
-        False,
-        ('fakemodule1',),
-        [FakeEntryPoint('fakemodule1', 'fakemodule1', patch)],
-        'pymonkey_patch',
-    )
-    assert ret == {'fakemodule1': patch}
+    assert ret == {'mod-1': patchingmod.pymonkey_patch}
 
 
 def test_retrieve_all():
-    def patch1(mod):
-        raise NotImplementedError
-
-    def patch2(mod):
-        raise NotImplementedError
-
     ret = pymonkey.get_entry_callables(
         True, (),
         [
-            FakeEntryPoint('mod1', 'mod1', patch1),
-            FakeEntryPoint('mod2', 'mod2', patch2),
+            EntryPoint.parse('mod1 = patchingmod'),
+            EntryPoint.parse('mod2 = patchingmod'),
         ],
         'pymonkey_patch',
     )
 
-    assert ret == {'mod1': patch1, 'mod2': patch2}
-
-
-def test_retrieve_name_doesnt_match_module_name():
-    def patch1(mod):
-        raise NotImplementedError
-
-    ret = pymonkey.get_entry_callables(
-        False, ('mod-1',), [FakeEntryPoint('mod-1', 'mod_1', patch1)],
-        'pymonkey_patch',
-    )
-    assert ret == {'mod-1': patch1}
+    assert ret == {
+        'mod1': patchingmod.pymonkey_patch,
+        'mod2': patchingmod.pymonkey_patch,
+    }
 
 
 @pytest.mark.parametrize(

@@ -90,6 +90,10 @@ def manual_argument_parsing(argv):
     return Arguments(all=all_patches, patches=tuple(patches), cmd=tuple(cmd))
 
 
+def importmod(mod):
+    return __import__(mod, fromlist=[str('__name__')], level=0)
+
+
 class PymonkeyImportHook(object):
     """This is where the magic happens.
 
@@ -157,7 +161,7 @@ class PymonkeyImportHook(object):
         # Since we're going to invoke the import machinery and hit ourselves
         # again, store some state so we don't recurse forever
         with self.handling(fullname):
-            module = __import__(fullname, fromlist=[str('__name__')], level=0)
+            module = importmod(fullname)
             for entry, hook_fn in self._hooks.items():
                 hook_fn(module, self._entry_data[entry])
             return module
@@ -193,7 +197,10 @@ def get_entry_callables(all_patches, patches, pymonkey_entry_points, attr):
     def _to_callable(entry_point):
         """If they give us a module, retrieve `attr`"""
         with assert_no_other_modules_imported(entry_point.module_name):
-            loaded = entry_point.load()
+            # Load the module manually to avoid pkg_resources side-effects
+            loaded = importmod(entry_point.module_name)
+            for entry_attr in entry_point.attrs:
+                loaded = getattr(loaded, entry_attr)
         if callable(loaded):
             return loaded
         else:
@@ -214,11 +221,6 @@ def get_entry_callables(all_patches, patches, pymonkey_entry_points, attr):
 def main(argv=None):
     argv = argv if argv is not None else sys.argv[1:]
     args = manual_argument_parsing(argv)
-
-    # Load our entry point
-    # This ensures that import side-effects of pkg_resources aren't picked
-    # up as module-level imports later on
-    pkg_resources.load_entry_point('pymonkey', 'console_scripts', 'pymonkey')
 
     # Register patches
     callables = get_entry_callables(
