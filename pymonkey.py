@@ -215,6 +215,11 @@ def main(argv=None):
     argv = argv if argv is not None else sys.argv[1:]
     args = manual_argument_parsing(argv)
 
+    # Load our entry point
+    # This ensures that import side-effects of pkg_resources aren't picked
+    # up as module-level imports later on
+    pkg_resources.load_entry_point('pymonkey', 'console_scripts', 'pymonkey')
+
     # Register patches
     callables = get_entry_callables(
         args.all, args.patches,
