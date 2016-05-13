@@ -129,4 +129,4 @@ $ pip-patched ...
 
 ### Things using pymonkey
 
-(Soon!)
+- https://github.com/asottile/pip-custom-platform
