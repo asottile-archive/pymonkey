@@ -263,5 +263,6 @@ def make_entry_point(patches, original_entry_point):
 
     return entry
 
+
 if __name__ == '__main__':
     sys.exit(main())
