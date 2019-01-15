@@ -11,7 +11,6 @@ matrix:
 install: pip install coveralls tox
 script: tox
 after_success: coveralls
-sudo: false
 cache:
     directories:
         - $HOME/.cache/pip
