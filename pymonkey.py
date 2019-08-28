@@ -94,6 +94,10 @@ def importmod(mod):
     return __import__(mod, fromlist=[str('__name__')], level=0)
 
 
+def _noop(*a, **k):
+    return None
+
+
 class PymonkeyImportHook(object):
     """This is where the magic happens.
 
@@ -113,7 +117,12 @@ class PymonkeyImportHook(object):
         # First check other entries in metapath for the module
         # Otherwise, try basic python import logic
         for entry in sys.meta_path:
-            if entry is not self and entry.find_module(module, path):
+            if (
+                    entry is not self and (
+                        getattr(entry, 'find_spec', _noop)(module, path) or
+                        getattr(entry, 'find_module', _noop)(module, path)
+                    )
+            ):
                 return True
 
         # We're either passed:
