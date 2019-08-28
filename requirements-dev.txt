@@ -1,7 +1,6 @@
 -e testing/pkg1
 -e testing/pkg2
 coverage
-flake8
 mock
 pre-commit
 pytest
