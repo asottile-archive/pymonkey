@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/asottile/pymonkey.svg?branch=master)](https://travis-ci.org/asottile/pymonkey)
-[![Coverage Status](https://img.shields.io/coveralls/asottile/pymonkey.svg?branch=master)](https://coveralls.io/r/asottile/pymonkey)
+[![Build Status](https://dev.azure.com/asottile/asottile/_apis/build/status/asottile.pymonkey?branchName=master)](https://dev.azure.com/asottile/asottile/_build/latest?definitionId=49&branchName=master)
+[![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/asottile/asottile/49/master.svg)](https://dev.azure.com/asottile/asottile/_build/latest?definitionId=49&branchName=master)
 
 pymonkey
 ========
