@@ -1,5 +1,6 @@
 -e testing/pkg1
 -e testing/pkg2
+covdefaults
 coverage
 mock
 pre-commit
