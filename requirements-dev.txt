@@ -2,5 +2,4 @@
 -e testing/pkg2
 coverage
 mock
-pre-commit
 pytest
