@@ -1,3 +1,9 @@
+# DEPRECATED
+
+this library is deprecated without replacement, maybe check out `wrapt`?
+
+___
+
 [![Build Status](https://dev.azure.com/asottile/asottile/_apis/build/status/asottile.pymonkey?branchName=master)](https://dev.azure.com/asottile/asottile/_build/latest?definitionId=49&branchName=master)
 [![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/asottile/asottile/49/master.svg)](https://dev.azure.com/asottile/asottile/_build/latest?definitionId=49&branchName=master)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/asottile/pymonkey/master.svg)](https://results.pre-commit.ci/latest/github/asottile/pymonkey/master)
